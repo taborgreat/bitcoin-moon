@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin Price vs Moon Phase</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="moonBitcoinChart" width="800" height="400"></canvas>
+  <script>
+    // Fetch JSON data from the file
+    fetch('./combined_data.json')
+      .then(response => response.json())
+      .then(data => {
+        // Prepare data for the chart
+        const labels = data.map(entry =>
+          `${new Date(parseInt(entry.TargetDate) * 1000).toLocaleDateString()} (${entry.Phase})`
+        );  // Reverse the order of labels
+        const prices = data.map(entry => entry.BitcoinPrice);  // Reverse the order of prices
+
+        // Background colors for bars based on waxing or waning moon phase
+        const phaseColors = data.map(entry => {
+          // Check the phase field to determine the color
+          if (entry.Phase.toLowerCase().includes('waxing')) {
+            return 'green'; // Waxing moon
+          } else if (entry.Phase.toLowerCase().includes('waning')) {
+            return 'red'; // Waning moon
+          } else {
+            return 'blue'; // For full moon or new moon
+          }
+        }); // Reverse the order of phase colors
+
+        // Chart configuration
+        const ctx = document.getElementById('moonBitcoinChart').getContext('2d');
+        const chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Bitcoin Price',
+              data: prices,
+              backgroundColor: phaseColors,
+              borderColor: phaseColors.map(color => color === 'red' ? 'darkred' : 'darkgreen'),
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const entry = data[context.dataIndex];
+                    return `Bitcoin Price: $${context.raw}\nMoon Phase: ${entry.Phase}\nIllumination: ${entry.Illumination}`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Date (Moon Phase)'
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: 'Bitcoin Price (USD)'
+                }
+              }
+            }
+          }
+        });
+      })
+      .catch(error => console.error('Error loading JSON:', error));
+  </script>
+</body>
+</html>
